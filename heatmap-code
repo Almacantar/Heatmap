@@ -1,0 +1,87 @@
+#libraries to load
+library(BBmisc)
+library(circlize)
+library(corrplot)
+library(data.table)
+library(dynutils)
+library(dplyr)
+library(EnhancedVolcano)
+library(foreign)
+library(ggbeeswarm)
+library(ggcorrplot)
+library(ggfortify)
+library(ggplot2)
+library(ggpubr)
+library(ggrepel)
+library(ggsignif)
+library(gplots)
+library(gtsummary)
+library(hablar)
+library(Hmisc)
+library(lubridate)
+library(pheatmap)
+library(polyPK)
+library(RColorBrewer)
+library(readr)
+library(reshape2)
+library(rstatix)
+library(Rtsne)
+library(scales)
+library(tidyverse)
+library(viridis)
+library(wesanderson)
+
+
+################# heatmap discovery vs validation
+#set directory
+setwd("C:/Users/delbarri/Google Drive/Senior tech/COVID-19 project/Data analysis/R serum")
+
+means_FC_clean <-read_csv("all_calc_test_new_v3.csv")
+
+#assigning Parameter as rownames
+rownames(means_FC_clean) <- means_FC_clean$Parameter
+
+#convert table to matrix
+means.mat <- data.matrix(means_FC_clean)
+
+#remove what we don't want to plot
+colnames(means.mat)
+means.mat <- means.mat[,-(1:29)]
+means.mat <- means.mat[,-(8:14)]
+colnames(means.mat) <- c("Ward vs Deterioration","Ward vs Deterioration (Discovery)","Ward vs Deterioration (Validation)", "High IP-10 vs low IP-10","High IP-10 vs low IP-10 (Discovery)","High IP-10 vs low IP-10 (Validation)", "High IP-10 Ward vs High IP-10 Deterioration")
+
+#create a matrix that is the same size but empty
+significance.matrix <- matrix("", nrow=nrow(means.mat), ncol=ncol(means.mat))
+# fill depending on values of original matrix
+significance.matrix [means.mat<0.05] <- "*"
+significance.matrix [means.mat<0.01] <- "**"
+significance.matrix [means.mat<0.001] <- "***"
+
+#col = c("green","blue","red","yellow")
+#Colors=rev(brewer.pal(4,"Spectral"))
+#breaks <- c(2.560911e-27, 0.001, 0.01, 0.05, 1)
+
+Colors=brewer.pal(11,"Spectral")
+breaks <- c(2.560911e-27, 0.001, 0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7,0.8, 0.9, 1)
+
+which(means.mat == min(means.mat), arr.ind = TRUE)
+which(means.mat == max(means.mat), arr.ind = TRUE)
+
+
+pdf("All pvalues.pdf")
+heatmap.2(means.mat,
+          dendrogram='none', #no dendrogram
+          Rowv=FALSE, Colv=FALSE,   #no reordering
+          cexRow=1, #row fontsize
+          cexCol=1,
+          cellnote = significance.matrix, notecol="black",
+          title("t-test pvalues Discovery vs Validation cohorts"),
+          trace = "none",
+        margins=c(18,20),
+          col=Colors,
+          breaks= breaks,
+          sepcolor = "black",
+          sepwidth=c(0.001,0.001),
+          colsep=0:125, #adds the vertical separation black lines 
+          rowsep=0:125) #adds the horizontal separation black lines 
+graphics.off()
